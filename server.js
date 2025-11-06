@@ -8,10 +8,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = 3000;
+// ✅ Render 환경 포트 대응 (process.env.PORT)
+const PORT = process.env.PORT || 3000;
 
 // ===== 정적 파일 서빙 =====
-// public 폴더 내 모든 파일 제공 (bg.mp4, sounds/, style.css, script.js 등)
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.json());
 
@@ -42,5 +42,5 @@ io.on("connection", (socket) => {
 
 // ===== 서버 시작 =====
 server.listen(PORT, () => {
-  console.log(`🚀 웹서버 실행 중: http://localhost:${PORT}`);
+  console.log(`🚀 서버 실행 중: 포트 ${PORT}`);
 });
