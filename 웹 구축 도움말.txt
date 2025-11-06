@@ -1,0 +1,11 @@
+경로
+cd Desktop\number-system
+
+cmd 서버실행
+node server.js
+
+로컬사이트
+http://localhost:3000
+
+ip 도메인 연결
+ipconfig 에서 wifi ip + :3000추가

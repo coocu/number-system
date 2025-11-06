@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>번호표 호출 모니터</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+      height: 100%;
+      width: 100%;
+    }
+
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    #popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1;
+      color: white;
+      font-family: "Pretendard", sans-serif;
+      text-align: center;
+    }
+
+    #popup h1 {
+      font-size: 400px;
+      animation: blink 2s infinite;
+      margin: 0;
+    }
+
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.2; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ✅ 배경 영상 -->
+  <video id="bgVideo" autoplay muted loop playsinline>
+    <source src="bg.mp4" type="video/mp4" />
+  </video>
+
+  <!-- ✅ 팝업 (숫자만 표시) -->
+  <div id="popup">
+    <h1 id="numText"></h1>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const popup = document.getElementById("popup");
+    const numText = document.getElementById("numText");
+    const socket = io();
+
+    function playSound(number) {
+      const audio = new Audio(`sounds/${number}.mp3`);
+      audio.play().catch(() => {});
+    }
+
+    function showPopup(number) {
+      numText.textContent = number;
+      popup.style.display = "flex";
+      playSound(number);
+      setTimeout(() => popup.style.display = "none", 7000);
+    }
+
+    socket.on("call", (data) => {
+      console.log("호출:", data.number);
+      showPopup(data.number);
+    });
+
+    socket.on("recall", (data) => {
+      console.log("재호출:", data.number);
+      showPopup(data.number);
+    });
+
+    socket.on("reset", () => {
+      popup.style.display = "none";
+    });
+  </script>
+</body>
+</html>
