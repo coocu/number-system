@@ -1,46 +1,36 @@
-// ===== server.js =====
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const path = require("path");
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// ✅ Render 환경 포트 대응 (process.env.PORT)
+// ✅ Render가 자동으로 포트를 지정해줌
 const PORT = process.env.PORT || 3000;
 
-// ===== 정적 파일 서빙 =====
-app.use(express.static(path.join(__dirname, "public")));
-app.use(express.json());
+// ✅ public 폴더 대신 현재 폴더 전체 정적 파일 허용
+app.use(express.static(__dirname));
 
-// ===== 호출 API (관리자앱에서 전송됨) =====
-app.post("/api/call", (req, res) => {
-  const cmd = req.body.cmd || "";
-  console.log("📨 명령 수신:", cmd);
-
-  const parts = cmd.split(" ");
-  const type = parts[0];
-  const number = parseInt(parts[1] || "0");
-
-  if (type === "CALL") {
-    io.emit("call", { number });
-  } else if (type === "RECALL") {
-    io.emit("recall", { number });
-  } else if (type === "RESET") {
-    io.emit("reset");
-  }
-
-  res.json({ ok: true });
+// ✅ 메인 페이지
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ===== 웹소켓 연결 =====
+// ✅ Socket 이벤트
 io.on("connection", (socket) => {
-  console.log("✅ 웹 연결됨:", socket.id);
+  console.log("✅ 클라이언트 연결됨");
+  socket.on("call", (data) => io.emit("call", data));
+  socket.on("recall", (data) => io.emit("recall", data));
+  socket.on("reset", () => io.emit("reset"));
 });
 
-// ===== 서버 시작 =====
-server.listen(PORT, () => {
-  console.log(`🚀 서버 실행 중: 포트 ${PORT}`);
+// ✅ 서버 실행
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
