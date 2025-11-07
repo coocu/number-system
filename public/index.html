@@ -29,7 +29,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       display: none;
       justify-content: center;
       align-items: center;
@@ -40,8 +40,8 @@
     }
 
     #popup h1 {
-      font-size: 400px;
-      animation: blink 2s infinite;
+      font-size: 220px;
+      animation: blink 1s infinite;
       margin: 0;
     }
 
@@ -57,7 +57,7 @@
     <source src="bg.mp4" type="video/mp4" />
   </video>
 
-  <!-- ✅ 팝업 (숫자만 표시) -->
+  <!-- ✅ 팝업 (호출 숫자 표시) -->
   <div id="popup">
     <h1 id="numText"></h1>
   </div>
@@ -68,18 +68,27 @@
     const numText = document.getElementById("numText");
     const socket = io();
 
+    // === URL에서 매장 ID 추출 (?store=값)
+    const params = new URLSearchParams(window.location.search);
+    const storeId = params.get("store") || "default"; // 기본값
+
+    // === 서버에 join
+    socket.emit("join", storeId);
+    console.log("매장 ID:", storeId);
+
     function playSound(number) {
       const audio = new Audio(`sounds/${number}.mp3`);
       audio.play().catch(() => {});
     }
 
     function showPopup(number) {
-      numText.textContent = number;
+      numText.textContent = `${number}번`;
       popup.style.display = "flex";
       playSound(number);
-      setTimeout(() => popup.style.display = "none", 7000);
+      setTimeout(() => (popup.style.display = "none"), 7000);
     }
 
+    // === 서버 신호 수신 ===
     socket.on("call", (data) => {
       console.log("호출:", data.number);
       showPopup(data.number);
@@ -91,7 +100,14 @@
     });
 
     socket.on("reset", () => {
+      console.log("초기화");
       popup.style.display = "none";
+    });
+
+    // === 오디오 권한용 클릭 ===
+    document.body.addEventListener("click", () => {
+      const s = new Audio();
+      s.play().catch(() => {});
     });
   </script>
 </body>
