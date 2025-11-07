@@ -90,7 +90,7 @@
     // ✅ 매장 ID 추출
     const urlParams = new URLSearchParams(window.location.search);
     let storeId = urlParams.get("store") || "default";
-    storeInfo.textContent = `🏪 ${storeId}`;
+    //storeInfo.textContent = `🏪 ${storeId}`;
     console.log("🟢 매장 ID:", storeId);
 
     socket.on("connect", () => {
