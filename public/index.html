@@ -12,7 +12,6 @@
       height: 100%;
       width: 100%;
     }
-
     video {
       position: fixed;
       top: 0;
@@ -22,103 +21,62 @@
       object-fit: cover;
       z-index: 0;
     }
-
     #popup {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.5);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 2;
+      z-index: 1;
       color: white;
+      font-family: "Pretendard", sans-serif;
       text-align: center;
     }
-
     #popup h1 {
       font-size: 240px;
       animation: blink 1s infinite;
       margin: 0;
-      font-family: "Pretendard", sans-serif;
     }
-
     @keyframes blink {
       0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0.3; }
-    }
-
-    #storeInfo {
-      position: fixed;
-      bottom: 25px;
-      right: 30px;
-      color: #00e5ff;
-      font-size: 26px;
-      opacity: 0.7;
-      font-family: "Pretendard", sans-serif;
-      z-index: 3;
+      25%, 75% { opacity: 0.2; }
     }
   </style>
 </head>
 <body>
+  <!-- ✅ 배경 영상 -->
   <video id="bgVideo" autoplay muted loop playsinline>
     <source src="bg.mp4" type="video/mp4" />
   </video>
 
+  <!-- ✅ 팝업 -->
   <div id="popup">
     <h1 id="numText"></h1>
   </div>
 
-  <div id="storeInfo"></div>
-
-  <!-- ✅ 최신 socket.io 클라이언트 -->
+  <!-- ✅ Socket.io -->
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
     const popup = document.getElementById("popup");
     const numText = document.getElementById("numText");
-    const storeInfo = document.getElementById("storeInfo");
-
-    // ✅ Render 서버 주소 고정 (자동 인식)
     const socket = io("https://number-system-seo9.onrender.com", {
-      transports: ["websocket"],
-      reconnection: true,
-      reconnectionDelay: 2000
+      transports: ["websocket"]
     });
 
-    // ✅ 매장 ID 추출
-    const urlParams = new URLSearchParams(window.location.search);
-    let storeId = urlParams.get("store") || "default";
-    //storeInfo.textContent = `🏪 ${storeId}`;
-    console.log("🟢 매장 ID:", storeId);
+    console.log("🟢 서버 연결 시도 중...");
 
     socket.on("connect", () => {
       console.log("✅ 서버 연결됨");
-      socket.emit("joinStore", storeId);
     });
 
     socket.on("disconnect", () => {
-      console.warn("⚠️ 서버 연결 끊김, 재시도 중...");
+      console.warn("⚠️ 서버 연결 끊김");
     });
 
-    // ✅ 호출/재호출/리셋 이벤트 수신
-    socket.on("call", (data) => {
-      console.log("📞 호출 수신:", data);
-      showPopup(data.number);
-    });
-
-    socket.on("recall", (data) => {
-      console.log("🔁 재호출 수신:", data);
-      showPopup(data.number);
-    });
-
-    socket.on("reset", () => {
-      console.log("♻️ 초기화 수신");
-      popup.style.display = "none";
-    });
-
-    // ✅ 팝업 표시 + 사운드
     function showPopup(number) {
       numText.textContent = number + "번";
       popup.style.display = "flex";
@@ -132,7 +90,21 @@
       audio.play().catch(e => console.warn("🔇 오디오 실패:", e));
     }
 
-    // ✅ 클릭 시 오디오 권한 확보
+    socket.on("call", (data) => {
+      console.log("🔔 호출:", data.number);
+      showPopup(data.number);
+    });
+
+    socket.on("recall", (data) => {
+      console.log("🔁 재호출:", data.number);
+      showPopup(data.number);
+    });
+
+    socket.on("reset", () => {
+      console.log("♻️ 초기화");
+      popup.style.display = "none";
+    });
+
     document.body.addEventListener("click", () => {
       const s = new Audio();
       s.play().catch(()=>{});
