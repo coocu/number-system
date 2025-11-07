@@ -1,7 +1,6 @@
 {
   "name": "number-system",
   "version": "1.0.0",
-  "description": "Queue calling system with express and socket.io",
   "main": "server.js",
   "type": "module",
   "scripts": {
