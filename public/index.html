@@ -67,7 +67,7 @@
     let storeId = params.get("store") || "";
 
     if (!storeId) {
-      storeId = prompt("매장 ID를 입력하세요 (예: storeA)") || "default";
+      storeId = prompt("매장 코드를 입력하세요") || "default";
       const newUrl = `${window.location.origin}?store=${storeId}`;
       window.history.replaceState({}, "", newUrl);
     }
