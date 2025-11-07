@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>번호표 모니터</title>
+  <title>번호표 호출 모니터</title>
   <style>
     html, body {
       margin: 0;
@@ -11,7 +11,6 @@
       background: black;
       height: 100%;
       width: 100%;
-      font-family: "Pretendard", sans-serif;
     }
 
     video {
@@ -30,12 +29,13 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.5);
       display: none;
       justify-content: center;
       align-items: center;
       z-index: 1;
       color: white;
+      font-family: "Pretendard", sans-serif;
       text-align: center;
     }
 
@@ -57,64 +57,55 @@
     <source src="bg.mp4" type="video/mp4" />
   </video>
 
-  <!-- ✅ 팝업 (호출 표시) -->
+  <!-- ✅ 팝업 (숫자만 표시) -->
   <div id="popup">
     <h1 id="numText"></h1>
   </div>
 
-  <!-- ✅ 소켓 연결 -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const popup = document.getElementById("popup");
     const numText = document.getElementById("numText");
     const socket = io();
 
-    // ✅ URL에서 매장ID 추출
+    // ✅ store ID 추출
     const urlParams = new URLSearchParams(window.location.search);
-    const storeId = urlParams.get("store") || "default";
+    const storeId = urlParams.get("store") || "default"; // 기본값 'default'
 
-    // ✅ 서버에 매장 룸 참가 알림
+    // ✅ 매장ID 서버로 전송
     socket.emit("joinStore", storeId);
-    console.log(`🟢 매장 입장: ${storeId}`);
+    console.log("🟢 연결된 매장 ID:", storeId);
 
-    // ✅ 사운드 재생 함수
     function playSound(number) {
       const audio = new Audio(`sounds/${number}.mp3`);
       audio.play().catch(() => {});
     }
 
-    // ✅ 팝업 표시 함수
     function showPopup(number) {
-      numText.textContent = number + "번";
+      numText.textContent = number;
       popup.style.display = "flex";
       playSound(number);
-
-      // 7초 후 팝업 닫기
-      setTimeout(() => {
-        popup.style.display = "none";
-      }, 7000);
+      setTimeout(() => popup.style.display = "none", 7000);
     }
 
-    // ✅ 서버 이벤트 수신
     socket.on("call", (data) => {
-      console.log(`📢 [호출] ${data.number} (${storeId})`);
+      console.log("호출:", data.number);
       showPopup(data.number);
     });
 
     socket.on("recall", (data) => {
-      console.log(`🔁 [재호출] ${data.number} (${storeId})`);
+      console.log("재호출:", data.number);
       showPopup(data.number);
     });
 
     socket.on("reset", () => {
-      console.log("♻️ [초기화]");
       popup.style.display = "none";
     });
 
-    // ✅ 오디오 권한 활성화 (첫 클릭 시)
+    // 🔈 사용자 클릭 시 오디오 권한 확보
     document.body.addEventListener("click", () => {
-      const silentAudio = new Audio();
-      silentAudio.play().catch(() => {});
+      const s = new Audio();
+      s.play().catch(()=>{});
     });
   </script>
 </body>
