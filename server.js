@@ -10,91 +10,78 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" },
-});
+const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// 🧩 store ID 처리
+// ✅ store 파라미터 확실히 인식
 function getStoreId(req) {
-  let id = null;
-  if (req.query?.store) id = req.query.store;
-  else if (req.headers["x-store-id"]) id = req.headers["x-store-id"];
-  else if (req.originalUrl.includes("store=")) {
-    id = req.originalUrl.split("store=")[1].split(/[/?&]/)[0];
-  }
-  if (!id) return "default";
-  return id.replace(/[^a-zA-Z0-9_-]/g, "") || "default";
+  const queryStore = req.query.store;
+  const bodyStore = req.body?.store;
+  const headerStore = req.headers["x-store-id"];
+  return (queryStore || bodyStore || headerStore || "default").trim();
 }
 
-// 🧩 숫자 파싱
-function parseNum(cmd) {
-  const m = (cmd || "").match(/\d+/);
-  return m ? parseInt(m[0]) : 0;
-}
-
-// ===== 메인 페이지 =====
+// ✅ 메인 페이지
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ===== 소켓 연결 =====
+// ✅ 소켓 연결
 io.on("connection", (socket) => {
-  let store = "default";
-  socket.on("joinStore", (id) => {
-    store = id || "default";
-    socket.join(store);
-    console.log(`🏪 모니터 접속됨: ${store}`);
+  socket.on("joinStore", (storeId) => {
+    const id = (storeId || "default").trim();
+    socket.join(id);
+    console.log(`🟢 모니터 연결됨: ${id}`);
   });
-  socket.on("disconnect", () => {
-    console.log(`❌ 연결 종료: ${store}`);
-  });
+  socket.on("disconnect", () => console.log("🔴 모니터 연결 해제"));
 });
 
-// ====== 관리자 호출 ======
+// ✅ 호출
 app.post("/api/call", (req, res) => {
-  const store = getStoreId(req);
+  const storeId = getStoreId(req);
   const cmd = req.body?.cmd || "";
-  const num = parseNum(cmd);
-  console.log("📡 요청 수신:", req.body, "STORE:", store);
+  const numMatch = cmd.match(/\d+/);
+  const number = numMatch ? parseInt(numMatch[0]) : null;
 
-  if (!num) return res.status(400).json({ ok: false, error: "invalid number" });
+  if (!number) return res.status(400).json({ ok: false });
 
-  console.log(`📢 [${store}] ${num}번 호출`);
-  io.to(store).emit("call", { number: num });
+  console.log(`📢 [${storeId}] ${number}번 호출`);
+  io.to(storeId).emit("call", { number });
   res.json({ ok: true });
 });
 
+// ✅ 재호출
 app.post("/api/recall", (req, res) => {
-  const store = getStoreId(req);
+  const storeId = getStoreId(req);
   const cmd = req.body?.cmd || "";
-  const num = parseNum(cmd);
+  const numMatch = cmd.match(/\d+/);
+  const number = numMatch ? parseInt(numMatch[0]) : null;
 
-  if (!num) return res.status(400).json({ ok: false });
+  if (!number) return res.status(400).json({ ok: false });
 
-  console.log(`🔁 [${store}] ${num}번 재호출`);
-  io.to(store).emit("recall", { number: num });
+  console.log(`🔁 [${storeId}] ${number}번 재호출`);
+  io.to(storeId).emit("recall", { number });
   res.json({ ok: true });
 });
 
+// ✅ 초기화
 app.post("/api/reset", (req, res) => {
-  const store = getStoreId(req);
-  console.log(`♻️ [${store}] reset`);
-  io.to(store).emit("reset");
+  const storeId = getStoreId(req);
+  console.log(`♻️ [${storeId}] reset`);
+  io.to(storeId).emit("reset");
   res.json({ ok: true });
 });
 
-// ====== 헬스체크 + Keep Alive ======
-app.get("/health", (_, res) => res.json({ ok: true }));
+// ✅ keep-alive
+app.get("/health", (req, res) => res.json({ ok: true }));
+
 setInterval(() => {
   fetch("https://number-system-seo9.onrender.com/health")
-    .then(r => console.log("💓 ping:", r.status))
-    .catch(() => console.log("ping fail"));
+    .then(r => console.log("💓 keep-alive:", r.status))
+    .catch(() => {});
 }, 600000);
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 서버 실행 중 (포트 ${PORT})`);
-});
+server.listen(PORT, "0.0.0.0", () => console.log(`🚀 서버 실행 중: ${PORT}`));
