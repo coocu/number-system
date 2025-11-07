@@ -31,7 +31,7 @@ io.on("connection", (socket) => {
   socket.on("joinStore", (id) => {
     storeId = id || "default";
     socket.join(storeId);
-    console.log();
+    console.log(`🏪 매장 접속: ${storeId}`);
   });
 
   // 호출
