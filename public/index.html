@@ -6,9 +6,12 @@
   <style>
     html, body {margin:0;padding:0;overflow:hidden;background:black;height:100%;width:100%;}
     video {position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:0;}
-    #popup {position:fixed;top:0;left:0;width:100%;height:100%;
-      background:rgba(0,0,0,0.5);display:none;justify-content:center;align-items:center;
-      z-index:1;color:white;text-align:center;}
+    #popup {
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0.5);
+      display:none;justify-content:center;align-items:center;
+      z-index:1;color:white;text-align:center;
+    }
     #popup h1 {font-size:400px;animation:blink 2s infinite;margin:0;}
     @keyframes blink {0%,50%,100%{opacity:1;}25%,75%{opacity:0.2;}}
   </style>
@@ -27,50 +30,50 @@
     const bgVideo = document.getElementById("bgVideo");
     const socket = io();
 
-    // -------------------------------------------
-    //  🔥 삼성인터넷 재생 차단 해결용 코드
-    // -------------------------------------------
-    function forcePlay() {
-      bgVideo.muted = true;
-      bgVideo.play().catch(() => {});
-    }
-
-    // 첫 화면터치 → 오디오/비디오 권한 해제
-    document.body.addEventListener("click", () => {
-      forcePlay();
-    }, { once:true });
-
-    // 영상이 멈추면 자동 재시도(삼성브라우저 전용 해결)
-    setInterval(() => {
-      if (bgVideo.paused) {
-        forcePlay();
-      }
-    }, 1500);
-    // -------------------------------------------
-
-
-    // URL에서 채널코드 읽기
     const params = new URLSearchParams(window.location.search);
     const channel = (params.get("ch") || "A000").toUpperCase();
     socket.emit("joinRoom", channel);
 
-    // 사운드
+    let currentAudio = null;
+
     function playSound(number) {
-      const audio = new Audio(`sounds/${number}.mp3`);
-      audio.play().catch(()=>{});
+      try {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+        }
+        currentAudio = new Audio(`sounds/${number}.mp3`);
+        currentAudio.play().catch(() => {});
+      } catch (e) {}
     }
 
-    // 팝업
+    // 🔥 여기만 수정됨
     function showPopup(number) {
       numText.textContent = number;
       popup.style.display = "flex";
+
       playSound(number);
-      setTimeout(() => popup.style.display = "none", 7000);
+
+      setTimeout(() => {
+        popup.style.display = "none";
+
+        // 🔥 삼성 인터넷 전용: 팝업 닫힐 때 영상 재생 다시 실행
+        bgVideo.play().catch(() => {});
+
+      }, 7000);
     }
 
     socket.on("call", data => showPopup(data.number));
     socket.on("recall", data => showPopup(data.number));
     socket.on("reset", () => popup.style.display = "none");
+
+    // 오디오 권한 확보
+    document.body.addEventListener("click", () => {
+      try {
+        const a = new Audio("sounds/silent.mp3");
+        a.play().catch(()=>{});
+      } catch (e) {}
+    }, { once: true });
   </script>
 </body>
 </html>
