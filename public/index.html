@@ -24,18 +24,43 @@
   <script>
     const popup = document.getElementById("popup");
     const numText = document.getElementById("numText");
+    const bgVideo = document.getElementById("bgVideo");
     const socket = io();
 
-    // ✅ URL에서 채널 코드 읽기 (예: ?ch=A123)
+    // -------------------------------------------
+    //  🔥 삼성인터넷 재생 차단 해결용 코드
+    // -------------------------------------------
+    function forcePlay() {
+      bgVideo.muted = true;
+      bgVideo.play().catch(() => {});
+    }
+
+    // 첫 화면터치 → 오디오/비디오 권한 해제
+    document.body.addEventListener("click", () => {
+      forcePlay();
+    }, { once:true });
+
+    // 영상이 멈추면 자동 재시도(삼성브라우저 전용 해결)
+    setInterval(() => {
+      if (bgVideo.paused) {
+        forcePlay();
+      }
+    }, 1500);
+    // -------------------------------------------
+
+
+    // URL에서 채널코드 읽기
     const params = new URLSearchParams(window.location.search);
     const channel = (params.get("ch") || "A000").toUpperCase();
     socket.emit("joinRoom", channel);
 
+    // 사운드
     function playSound(number) {
       const audio = new Audio(`sounds/${number}.mp3`);
-      audio.play().catch(() => {});
+      audio.play().catch(()=>{});
     }
 
+    // 팝업
     function showPopup(number) {
       numText.textContent = number;
       popup.style.display = "flex";
